@@ -30,6 +30,8 @@
 
 # COMMAND ----------
 
+# DBTITLE 1,Cell 5
+import datetime
 from databricks.vector_search.client import VectorSearchClient
 
 vs_client = VectorSearchClient(disable_notice=True)
@@ -43,7 +45,7 @@ except Exception:
 
 # Aguarda ficar PROVISIONED/ONLINE — até 15 min
 print(f"⏳ Aguardando '{VS_ENDPOINT_NAME}' ficar pronto (pode levar até 10min se for cold start)...")
-vs_client.wait_for_endpoint(name=VS_ENDPOINT_NAME, timeout=900)
+vs_client.wait_for_endpoint(name=VS_ENDPOINT_NAME, timeout=datetime.timedelta(seconds=900))
 print(f"✅ Endpoint pronto")
 
 # COMMAND ----------
@@ -83,7 +85,7 @@ import time
 
 idx = vs_client.get_index(endpoint_name=VS_ENDPOINT_NAME, index_name=VS_INDEX_NAME)
 
-for i in range(60):
+for i in range(100):
     status = idx.describe().get("status", {})
     state = status.get("detailed_state", "")
     ready = status.get("ready", False)
@@ -158,4 +160,4 @@ show_results(search("garantia", filters={"category": "politica"}))
 # MAGIC
 # MAGIC O index está vivo e disponível em `{VS_INDEX_NAME}`. Daqui em diante, qualquer notebook (ou agent deployado) pode consultar.
 # MAGIC
-# MAGIC ➡️ Próximo: [`03_rag_agent`](./03_rag_agent) — montar o agent que consome esse retrieval.
+# MAGIC ➡️ Próximo: **03_rag_agent** — montar o agent que consome esse retrieval.
