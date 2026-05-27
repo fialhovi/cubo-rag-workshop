@@ -221,4 +221,4 @@ except Exception:
 # MAGIC | Eval set | `{EVAL_TABLE}` |
 # MAGIC | VS Endpoint | `{VS_ENDPOINT_NAME}` (provisionando em background) |
 # MAGIC
-# MAGIC ➡️ Próximo: [`01_chunking_embeddings`](./01_chunking_embeddings) — não precisa esperar o endpoint, esse lab roda em paralelo.
+# MAGIC ➡️ Próximo: **02_chunking_embeddings** — não precisa esperar o endpoint, esse lab roda em paralelo. (Opcional: rode `01_extra` antes pra demo conceitual de tokenização + embedding.)

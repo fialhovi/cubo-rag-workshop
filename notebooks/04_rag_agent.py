@@ -220,4 +220,4 @@ displayHTML(f"""
 # MAGIC
 # MAGIC Temos duas variantes do agent. No próximo lab vamos comparar **objetivamente** qual é melhor.
 # MAGIC
-# MAGIC ➡️ Próximo: [`04_evaluation`](./04_evaluation)
+# MAGIC ➡️ Próximo: **05_evaluation**

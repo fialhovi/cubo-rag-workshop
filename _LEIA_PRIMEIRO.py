@@ -27,11 +27,12 @@
 # MAGIC | # | Notebook | Tempo | O que faz |
 # MAGIC |---|---|---|---|
 # MAGIC | 0 | [`notebooks/00_setup`](./notebooks/00_setup) | 10 min | Schema + dataset sintético "Aurorinha" (e-commerce BR) |
-# MAGIC | 1 | [`notebooks/01_chunking_embeddings`](./notebooks/01_chunking_embeddings) | 25 min | 3 estratégias de chunking + embeddings via FM API |
-# MAGIC | 2 | [`notebooks/02_vector_search`](./notebooks/02_vector_search) | 20 min | Delta + Vector Search Index + retrieval semântico |
-# MAGIC | 3 | [`notebooks/03_rag_agent`](./notebooks/03_rag_agent) | 25 min | Agent com retrieval tool + variante com reranking |
-# MAGIC | 4 | [`notebooks/04_evaluation`](./notebooks/04_evaluation) | 25 min | `mlflow.evaluate` + LLM judges + comparação |
-# MAGIC | 5 | [`notebooks/05_observability_tradeoffs`](./notebooks/05_observability_tradeoffs) | 15 min | Tracing, inference tables, trade-offs de prod |
+# MAGIC | — | [`notebooks/01_extra`](./notebooks/01_extra) | _opcional_ | Demo: tokenização + chunking + embedding com 3 textos |
+# MAGIC | 1 | [`notebooks/02_chunking_embeddings`](./notebooks/02_chunking_embeddings) | 25 min | 3 estratégias de chunking + embeddings via FM API |
+# MAGIC | 2 | [`notebooks/03_vector_search`](./notebooks/03_vector_search) | 20 min | Delta + Vector Search Index + retrieval semântico |
+# MAGIC | 3 | [`notebooks/04_rag_agent`](./notebooks/04_rag_agent) | 25 min | Agent com retrieval tool + variante com reranking |
+# MAGIC | 4 | [`notebooks/05_evaluation`](./notebooks/05_evaluation) | 25 min | `mlflow.evaluate` + LLM judges + comparação |
+# MAGIC | 5 | [`notebooks/06_observability_tradeoffs`](./notebooks/06_observability_tradeoffs) | 15 min | Tracing, inference tables, trade-offs de prod |
 # MAGIC
 # MAGIC ## Antes de começar
 # MAGIC

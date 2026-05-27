@@ -160,4 +160,4 @@ show_results(search("garantia", filters={"category": "politica"}))
 # MAGIC
 # MAGIC O index está vivo e disponível em `{VS_INDEX_NAME}`. Daqui em diante, qualquer notebook (ou agent deployado) pode consultar.
 # MAGIC
-# MAGIC ➡️ Próximo: **03_rag_agent** — montar o agent que consome esse retrieval.
+# MAGIC ➡️ Próximo: **04_rag_agent** — montar o agent que consome esse retrieval.

@@ -12,6 +12,7 @@
 # MAGIC |---|---|---|
 # MAGIC | 0:00 – 0:05 | Abertura | Apresentar objetivos, dataset, stack |
 # MAGIC | 0:05 – 0:15 | Lab 0 | Setup + geração de dados **+ dispara criação do VS endpoint (5-10min em background)** |
+# MAGIC | _opcional_ | `01_extra` | Demo curta de tokenização + embedding pra audiências iniciantes (pular se a turma já tem repertório) |
 # MAGIC | 0:15 – 0:40 | Lab 1 | Chunking + embeddings (endpoint provisiona em paralelo) |
 # MAGIC | 0:40 – 1:00 | Lab 2 | Aguarda endpoint pronto + cria índice + retrieval |
 # MAGIC | 1:00 – 1:05 | ☕ | Pausa curta |

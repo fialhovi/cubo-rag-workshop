@@ -224,4 +224,4 @@ display(spark.table(CHUNKS_TABLE).limit(5))
 # MAGIC %md
 # MAGIC ## ✅ Concluído
 # MAGIC
-# MAGIC ➡️ Próximo: [`02_vector_search`](./02_vector_search) — criar o índice e fazer retrieval real.
+# MAGIC ➡️ Próximo: **03_vector_search** — criar o índice e fazer retrieval real.

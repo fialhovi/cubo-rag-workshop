@@ -26,11 +26,12 @@ Ao final você vai saber:
 | # | Notebook | Tempo | O que faz |
 |---|---|---|---|
 | 0 | [`notebooks/00_setup`](notebooks/00_setup.py) | 10 min | Schema + dataset "Aurorinha" + dispara criação do VS endpoint |
-| 1 | [`notebooks/01_chunking_embeddings`](notebooks/01_chunking_embeddings.py) | 25 min | 3 estratégias de chunking (PySpark) + embeddings |
-| 2 | [`notebooks/02_vector_search`](notebooks/02_vector_search.py) | 20 min | Aguarda endpoint + cria Delta Sync Index + retrieval |
-| 3 | [`notebooks/03_rag_agent`](notebooks/03_rag_agent.py) | 25 min | Agent com retrieval tool + variante com LLM-judge rerank |
-| 4 | [`notebooks/04_evaluation`](notebooks/04_evaluation.py) | 25 min | `mlflow.evaluate(model_type="databricks-agent")` A/B |
-| 5 | [`notebooks/05_observability_tradeoffs`](notebooks/05_observability_tradeoffs.py) | 15 min | MLflow Tracing + checklist de prod + cleanup |
+| — | [`notebooks/01_extra`](notebooks/01_extra.py) | _opcional_ | Demo de tokenização + chunking + embedding com 3 textos pra comparar |
+| 1 | [`notebooks/02_chunking_embeddings`](notebooks/02_chunking_embeddings.py) | 25 min | 3 estratégias de chunking (PySpark) + embeddings |
+| 2 | [`notebooks/03_vector_search`](notebooks/03_vector_search.py) | 20 min | Aguarda endpoint + cria Delta Sync Index + retrieval |
+| 3 | [`notebooks/04_rag_agent`](notebooks/04_rag_agent.py) | 25 min | Agent com retrieval tool + variante com LLM-judge rerank |
+| 4 | [`notebooks/05_evaluation`](notebooks/05_evaluation.py) | 25 min | `mlflow.evaluate(model_type="databricks-agent")` A/B |
+| 5 | [`notebooks/06_observability_tradeoffs`](notebooks/06_observability_tradeoffs.py) | 15 min | MLflow Tracing + checklist de prod + cleanup |
 
 ## Como usar
 
@@ -65,11 +66,12 @@ Não precisa editar nada — o `SCHEMA_NAME` é derivado automaticamente do seu 
 │   └── 02_APRENDIZADOS_PRODUCAO.py  # 10 lições de RAG em escala
 └── notebooks/
     ├── 00_setup.py
-    ├── 01_chunking_embeddings.py
-    ├── 02_vector_search.py
-    ├── 03_rag_agent.py
-    ├── 04_evaluation.py
-    └── 05_observability_tradeoffs.py
+    ├── 01_extra.py                          # opcional: demo de tokens + embeddings
+    ├── 02_chunking_embeddings.py
+    ├── 03_vector_search.py
+    ├── 04_rag_agent.py
+    ├── 05_evaluation.py
+    └── 06_observability_tradeoffs.py
 ```
 
 ## Stack

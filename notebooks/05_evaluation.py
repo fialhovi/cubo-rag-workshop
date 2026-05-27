@@ -139,7 +139,7 @@ def eval_model(name: str, fn, eval_pdf: pd.DataFrame, params: dict):
             "variant": name,
             "embedding_model": EMBEDDING_MODEL,
             "llm_model": LLM_MODEL,
-            "lab": "04_evaluation",
+            "lab": "05_evaluation",
         })
         # Params → coluna na UI; permite ordenar por "k", "rerank", etc.
         mlflow.log_params(params)
@@ -289,4 +289,4 @@ display(side_by_side)
 # MAGIC - **Custo**: reranked usa 5-10x mais tokens. Quanto é "ok" gastar pra ganhar X% de correctness?
 # MAGIC - **Riscos do `Não tenho essa informação`**: o groundedness alto previne alucinação, mas usuário sente "robô burro" se vir muito esse fallback
 # MAGIC
-# MAGIC ➡️ Próximo: [`05_observability_tradeoffs`](./05_observability_tradeoffs) — fechamento + lições de prod.
+# MAGIC ➡️ Próximo: **06_observability_tradeoffs** — fechamento + lições de prod.
