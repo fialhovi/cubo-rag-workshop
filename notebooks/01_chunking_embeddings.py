@@ -194,40 +194,11 @@ display(summary)
 # MAGIC | **Recursive** | Respeita estrutura, custo zero | Pode gerar chunks muito desiguais | **Default produção** |
 # MAGIC | **Semantic** | Quebra onde o tópico muda | Custa O(N) embeddings; threshold é hyperparam | Docs bem estruturados, base estável |
 # MAGIC
-# MAGIC ## 5. Teste de retrieval rápido
-# MAGIC
-# MAGIC Pergunta *"política de devolução"* embedada contra chunks recursive vs fixed → top-1 ranking.
-
-# COMMAND ----------
-
-query = "Quantos dias eu tenho pra devolver?"
-[q_emb] = embed_batch([query])
-
-def topk(df, k: int = 3):
-    """Coleta chunks, embedda cada um, retorna top-k por similaridade — como Spark DF."""
-    rows = df.select("article_id", "chunk").collect()
-    chunk_embs = embed_batch([r.chunk for r in rows])
-    scored = [(r.article_id, float(cosine(q_emb, e)), r.chunk) for r, e in zip(rows, chunk_embs)]
-    scored.sort(key=lambda x: x[1], reverse=True)
-    return spark.createDataFrame(
-        scored[:k],
-        schema="article_id string, sim double, chunk string",
-    )
-
-print("🔍 TOP-3 com FIXED:")
-display(topk(fixed_df))
-
-print("🔍 TOP-3 com RECURSIVE:")
-display(topk(recursive_df))
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC **O que observar:** com recursive, o top-1 quase sempre é `faq-002` (devolução) e o chunk começa numa frase completa. Com fixed, mesmo quando bate o artigo certo, o chunk pode começar no meio de uma palavra — pior contexto pro LLM.
-# MAGIC
-# MAGIC ## 6. Persiste os chunks **recursive** (default escolhido)
+# MAGIC ## 5. Persiste os chunks **recursive** (default escolhido)
 # MAGIC
 # MAGIC Direto da DataFrame Spark → Delta com CDF habilitado (alimenta o Vector Search Sync).
+# MAGIC
+# MAGIC > **Por que recursive?** No próximo lab vamos rodar o retrieval real (Vector Search) e comparar a qualidade das respostas — o teste objetivo fica lá, onde já temos índice servido.
 
 # COMMAND ----------
 
