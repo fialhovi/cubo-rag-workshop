@@ -26,11 +26,12 @@
 
 # COMMAND ----------
 
+spark.sql(f"CREATE CATALOG IF NOT EXISTS {CATALOG_NAME}")
 spark.sql(f"CREATE SCHEMA IF NOT EXISTS {CATALOG_NAME}.{SCHEMA_NAME}")
 spark.sql(f"USE CATALOG {CATALOG_NAME}")
 spark.sql(f"USE SCHEMA {SCHEMA_NAME}")
 
-print(f"✅ Schema {CATALOG_NAME}.{SCHEMA_NAME} pronto")
+print(f"✅ Catalog {CATALOG_NAME} + schema {SCHEMA_NAME} prontos")
 
 # COMMAND ----------
 

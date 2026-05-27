@@ -18,7 +18,7 @@ Ao final você vai saber:
 |---|---|
 | **Workspace Databricks** | Acesso ao Foundation Model API (`databricks-gte-large-en`, `databricks-meta-llama-3-3-70b-instruct`) |
 | **Compute** | Serverless OU cluster DBR 15.4 LTS ML (ou superior) |
-| **Unity Catalog** | Catálogo `workshop_databricks` com permissão `CREATE SCHEMA` |
+| **Unity Catalog** | Permissão `CREATE CATALOG` no metastore (o notebook cria `workshop_databricks` se não existir) |
 | **Vector Search** | Permissão pra criar endpoint serverless |
 
 ## Roteiro (2h)
@@ -50,7 +50,7 @@ databricks workspace import-dir . /Users/seu.email@empresa.com/cubo_rag --overwr
 
 ### Configuração
 
-Não precisa editar nada — o `SCHEMA_NAME` é derivado automaticamente do seu usuário (`fulano.silva@empresa.com` → `fulano_silva_rag`) e o catálogo `workshop_databricks` precisa existir no workspace (o facilitador cria antes do evento).
+Não precisa editar nada — o `SCHEMA_NAME` é derivado automaticamente do seu usuário (`fulano.silva@empresa.com` → `fulano_silva_rag`) e o catálogo `workshop_databricks` é criado pelo Lab 0 se ainda não existir.
 
 ## Estrutura
 
