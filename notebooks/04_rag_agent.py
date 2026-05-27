@@ -76,9 +76,6 @@ def retrieve(query: str, k: int = 5, query_type: str = "ANN") -> list[dict]:
 
 # Teste rápido
 docs = retrieve("Qual o prazo de devolução?")
-for d in docs:
-    print(f"[{d['score']:.3f}] {d['article_id']} — {d['title']}")
-    print(f"   {d['chunk'][:100]}...")
 
 # COMMAND ----------
 

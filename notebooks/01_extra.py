@@ -236,19 +236,3 @@ resumo = pd.DataFrame([
 ])
 
 display(resumo)
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC ### Comparação visual dos embeddings (vetores lado a lado)
-
-# COMMAND ----------
-
-df_comparacao = pd.DataFrame({
-    "posicao": range(len(emb_1)),
-    "emb_texto_1": emb_1,
-    "emb_texto_2": emb_2,
-    "emb_texto_3": emb_3,
-})
-
-display(df_comparacao)

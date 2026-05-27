@@ -155,7 +155,7 @@ for row in recursive_df.filter(F.col("article_id") == TARGET).orderBy("chunk_idx
 # MAGIC | Tamanho dos chunks | Uniforme | Variável (até `chunk_size`) |
 # MAGIC | Custo computacional | Trivial | Trivial |
 # MAGIC | Qualidade do embedding | Pior (frase quebrada) | Melhor (unidade semântica) |
-# MAGIC | Quando usar | Logs, OCR, texto homogêneo | **Default produção** (docs, FAQ, KB) |
+# MAGIC | Quando usar | OCR | **Default produção** (docs, FAQ, KB) |
 # MAGIC
 # MAGIC **Conclusão:** Recursive ganha quase sempre. É o default que recomendamos pra workshop e pra produção.
 
