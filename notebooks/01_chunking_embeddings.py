@@ -109,13 +109,25 @@ display(recursive_df.select("article_id", "chunk_idx", "chunk", "chunk_len").lim
 
 from mlflow.deployments import get_deploy_client
 import numpy as np
-import re
+import re, time
 
 deploy_client = get_deploy_client("databricks")
 
-def embed_batch(texts: list[str]) -> list[list[float]]:
-    resp = deploy_client.predict(endpoint=EMBEDDING_MODEL, inputs={"input": texts})
-    return [d["embedding"] for d in resp["data"]]
+def embed_batch(texts: list[str], max_retries: int = 6) -> list[list[float]]:
+    """Embedda em batch. Faz retry exponencial em 429 (QPS limit do FM API)."""
+    for attempt in range(max_retries):
+        try:
+            resp = deploy_client.predict(endpoint=EMBEDDING_MODEL, inputs={"input": texts})
+            return [d["embedding"] for d in resp["data"]]
+        except Exception as e:
+            msg = str(e)
+            if ("429" in msg or "REQUEST_LIMIT" in msg) and attempt < max_retries - 1:
+                wait = 2 ** attempt  # 1, 2, 4, 8, 16, 32s
+                print(f"⏳ Rate limit (tentativa {attempt+1}/{max_retries}) — aguardando {wait}s...")
+                time.sleep(wait)
+            else:
+                raise
+    raise RuntimeError(f"embed_batch falhou após {max_retries} tentativas")
 
 def cosine(a, b):
     a, b = np.array(a), np.array(b)
