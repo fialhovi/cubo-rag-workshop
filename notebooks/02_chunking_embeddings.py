@@ -4,20 +4,19 @@
 # MAGIC
 # MAGIC | | |
 # MAGIC |---|---|
-# MAGIC | 🎯 **Objetivo** | Comparar 3 estratégias de chunking, gerar embeddings via Foundation Model API, observar trade-offs |
+# MAGIC | 🎯 **Objetivo** | Comparar 2 estratégias de chunking (fixed vs recursive) e ver na prática por que recursive ganha |
 # MAGIC | ⏱ **Tempo** | 25 min |
 # MAGIC
 # MAGIC **Conceitos abordados:**
-# MAGIC - Chunking **fixed-size** (mais simples, ignora estrutura)
+# MAGIC - Chunking **fixed-size** (corta a cada N caracteres, ignora estrutura)
 # MAGIC - Chunking **recursive** (respeita boundaries: parágrafo → frase → palavra) ← *default em produção*
-# MAGIC - Chunking **semantic** (split por similaridade de embedding) ← *caro mas poderoso*
-# MAGIC - Embeddings via **`databricks-gte-large-en`**
+# MAGIC - Comparação lado-a-lado: olhe o **conteúdo** dos chunks, não só os números
 # MAGIC
 # MAGIC **Padrão Spark:** chunking aplicado via **UDF + `posexplode`** (1 doc → N chunks) e tudo persistido em Delta.
 
 # COMMAND ----------
 
-# MAGIC %pip install -q langchain-text-splitters mlflow>=2.18
+# MAGIC %pip install -q langchain-text-splitters
 # MAGIC dbutils.library.restartPython()
 
 # COMMAND ----------
@@ -38,23 +37,17 @@ display(source_df.select("article_id", "category", "title"))
 # MAGIC %md
 # MAGIC ## 1. Estratégia A — Fixed-size
 # MAGIC
-# MAGIC Quebra a cada N caracteres, sem olhar o conteúdo. Simples, rápido, **ruim** pra texto com estrutura — quebra frases no meio.
+# MAGIC Corta a cada **N caracteres**, sem olhar o conteúdo. Pra deixar a diferença bem visível, vamos usar `CHUNK_SIZE=180` **sem overlap** — assim os cortes caem no meio de palavras e frases.
 # MAGIC
 # MAGIC **Pattern Spark:** UDF que recebe 1 string e devolve um `Array[String]`, depois `posexplode` pra 1 linha por chunk.
 
 # COMMAND ----------
 
-CHUNK_SIZE = 400
-OVERLAP = 50
+FIXED_CHUNK_SIZE = 180   # propositalmente pequeno pra mostrar quebras feias
 
 @F.udf(returnType=ArrayType(StringType()))
 def fixed_chunk_udf(text: str):
-    chunks = []
-    start = 0
-    while start < len(text):
-        chunks.append(text[start:start + CHUNK_SIZE])
-        start += CHUNK_SIZE - OVERLAP
-    return chunks
+    return [text[i:i + FIXED_CHUNK_SIZE] for i in range(0, len(text), FIXED_CHUNK_SIZE)]
 
 def explode_chunks(df, chunker_udf, strategy_name):
     """1 doc → N chunks via UDF + posexplode. Retorna Spark DF tipado."""
@@ -70,109 +63,47 @@ def explode_chunks(df, chunker_udf, strategy_name):
 
 fixed_df = explode_chunks(source_df, fixed_chunk_udf, "fixed")
 print(f"Fixed: {fixed_df.count()} chunks")
-display(fixed_df.select("article_id", "chunk_idx", "chunk", "chunk_len").limit(5))
+display(fixed_df.select("article_id", "chunk_idx", "chunk", "chunk_len").limit(8))
 
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC ## 2. Estratégia B — Recursive
 # MAGIC
-# MAGIC `RecursiveCharacterTextSplitter` tenta separadores em ordem: `\n\n`, `\n`, `. `, ` `. **Respeita boundaries** sem custo extra de embeddings.
+# MAGIC `RecursiveCharacterTextSplitter` tenta separadores em ordem: `\n\n`, `\n`, `. `, `, `, ` `. **Respeita boundaries** — só corta no meio da palavra como último recurso.
+# MAGIC
+# MAGIC Usamos `chunk_size=400` (mais que o dobro do fixed) com `overlap=80` pra preservar contexto entre chunks.
 
 # COMMAND ----------
+
+RECURSIVE_CHUNK_SIZE = 400
+RECURSIVE_OVERLAP = 80
 
 @F.udf(returnType=ArrayType(StringType()))
 def recursive_chunk_udf(text: str):
     # Import dentro do UDF — código roda no worker
     from langchain_text_splitters import RecursiveCharacterTextSplitter
     splitter = RecursiveCharacterTextSplitter(
-        chunk_size=400,
-        chunk_overlap=50,
+        chunk_size=RECURSIVE_CHUNK_SIZE,
+        chunk_overlap=RECURSIVE_OVERLAP,
         separators=["\n\n", "\n", ". ", "! ", "? ", "; ", ", ", " ", ""],
     )
     return splitter.split_text(text)
 
 recursive_df = explode_chunks(source_df, recursive_chunk_udf, "recursive")
 print(f"Recursive: {recursive_df.count()} chunks")
-display(recursive_df.select("article_id", "chunk_idx", "chunk", "chunk_len").limit(5))
+display(recursive_df.select("article_id", "chunk_idx", "chunk", "chunk_len").limit(8))
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## 3. Estratégia C — Semantic
-# MAGIC
-# MAGIC Embedda cada frase, junta frases consecutivas enquanto a similaridade for alta. **Quebra onde o tópico muda.**
-# MAGIC
-# MAGIC > **Por que essa NÃO é UDF?** O semantic chama o endpoint de embeddings (1 call por frase). Em UDF, cada call serializa o client → lento + flaky. Como temos só 14 docs, colhemos pro driver e processamos sequencialmente. Em produção (milhares de docs), o caminho seria `pandas_udf` vetorizado.
-
-# COMMAND ----------
-
-from mlflow.deployments import get_deploy_client
-import numpy as np
-import re, time
-
-deploy_client = get_deploy_client("databricks")
-
-def embed_batch(texts: list[str], max_retries: int = 6) -> list[list[float]]:
-    """Embedda em batch. Faz retry exponencial em 429 (QPS limit do FM API)."""
-    for attempt in range(max_retries):
-        try:
-            resp = deploy_client.predict(endpoint=EMBEDDING_MODEL, inputs={"input": texts})
-            return [d["embedding"] for d in resp["data"]]
-        except Exception as e:
-            msg = str(e)
-            if ("429" in msg or "REQUEST_LIMIT" in msg) and attempt < max_retries - 1:
-                wait = 2 ** attempt  # 1, 2, 4, 8, 16, 32s
-                print(f"⏳ Rate limit (tentativa {attempt+1}/{max_retries}) — aguardando {wait}s...")
-                time.sleep(wait)
-            else:
-                raise
-    raise RuntimeError(f"embed_batch falhou após {max_retries} tentativas")
-
-def cosine(a, b):
-    a, b = np.array(a), np.array(b)
-    return float(a @ b / (np.linalg.norm(a) * np.linalg.norm(b)))
-
-def semantic_split(text: str, threshold: float = 0.75) -> list[str]:
-    sentences = [s.strip() for s in re.split(r"(?<=[.!?])\s+", text) if s.strip()]
-    if len(sentences) <= 1:
-        return sentences
-    embs = embed_batch(sentences)
-    chunks, current = [], [sentences[0]]
-    for i in range(1, len(sentences)):
-        if cosine(embs[i-1], embs[i]) >= threshold:
-            current.append(sentences[i])
-        else:
-            chunks.append(" ".join(current))
-            current = [sentences[i]]
-    chunks.append(" ".join(current))
-    return chunks
-
-# Coleta os docs no driver, splitta, reconstrói como Spark DF
-docs = source_df.collect()
-semantic_rows = [
-    (row.article_id, row.category, row.title, i, ch, len(ch), "semantic")
-    for row in docs
-    for i, ch in enumerate(semantic_split(row.content))
-]
-semantic_df = spark.createDataFrame(
-    semantic_rows,
-    schema="article_id string, category string, title string, chunk_idx int, chunk string, chunk_len int, strategy string",
-)
-print(f"Semantic: {semantic_df.count()} chunks")
-display(semantic_df.select("article_id", "chunk_idx", "chunk", "chunk_len").limit(5))
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC ## 4. Comparação — agregação em Spark
+# MAGIC ## 3. Comparação numérica
 
 # COMMAND ----------
 
 all_chunks = (
     fixed_df.select("strategy", "chunk_len")
     .unionByName(recursive_df.select("strategy", "chunk_len"))
-    .unionByName(semantic_df.select("strategy", "chunk_len"))
 )
 
 summary = all_chunks.groupBy("strategy").agg(
@@ -186,19 +117,54 @@ display(summary)
 # COMMAND ----------
 
 # MAGIC %md
+# MAGIC ## 4. 🔍 Comparação visual — mesmo artigo, dois cortes
+# MAGIC
+# MAGIC Pegamos o artigo `faq-002` (Política de devolução) e mostramos como cada estratégia partiu o mesmo texto.
+# MAGIC
+# MAGIC **O que observar:**
+# MAGIC - **Fixed** corta no meio de palavras (ex: `...documen`, `to seguro...`) e no meio de frases — chunk começa/termina sem contexto.
+# MAGIC - **Recursive** termina em ponto final, parágrafo ou vírgula — cada chunk é uma unidade legível.
+
+# COMMAND ----------
+
+TARGET = "faq-002"
+
+print("=" * 80)
+print(f"📄 ESTRATÉGIA A (FIXED) — chunk_size={FIXED_CHUNK_SIZE}, sem overlap")
+print("=" * 80)
+for row in fixed_df.filter(F.col("article_id") == TARGET).orderBy("chunk_idx").collect():
+    print(f"\n--- Chunk {row.chunk_idx} ({row.chunk_len} chars) ---")
+    print(row.chunk)
+
+print("\n" + "=" * 80)
+print(f"📄 ESTRATÉGIA B (RECURSIVE) — chunk_size={RECURSIVE_CHUNK_SIZE}, overlap={RECURSIVE_OVERLAP}")
+print("=" * 80)
+for row in recursive_df.filter(F.col("article_id") == TARGET).orderBy("chunk_idx").collect():
+    print(f"\n--- Chunk {row.chunk_idx} ({row.chunk_len} chars) ---")
+    print(row.chunk)
+
+# COMMAND ----------
+
+# MAGIC %md
 # MAGIC ### Trade-off observado
 # MAGIC
-# MAGIC | Estratégia | Pró | Contra | Use quando |
-# MAGIC |---|---|---|---|
-# MAGIC | **Fixed** | Trivial, determinístico | Quebra frases no meio → embedding pior | Texto homogêneo (logs, OCR) |
-# MAGIC | **Recursive** | Respeita estrutura, custo zero | Pode gerar chunks muito desiguais | **Default produção** |
-# MAGIC | **Semantic** | Quebra onde o tópico muda | Custa O(N) embeddings; threshold é hyperparam | Docs bem estruturados, base estável |
+# MAGIC | Aspecto | Fixed | Recursive ⭐ |
+# MAGIC |---|---|---|
+# MAGIC | Quebra palavras | ❌ Sim | ✅ Não (último recurso) |
+# MAGIC | Respeita parágrafo / frase | ❌ Não | ✅ Sim |
+# MAGIC | Tamanho dos chunks | Uniforme | Variável (até `chunk_size`) |
+# MAGIC | Custo computacional | Trivial | Trivial |
+# MAGIC | Qualidade do embedding | Pior (frase quebrada) | Melhor (unidade semântica) |
+# MAGIC | Quando usar | Logs, OCR, texto homogêneo | **Default produção** (docs, FAQ, KB) |
 # MAGIC
+# MAGIC **Conclusão:** Recursive ganha quase sempre. É o default que recomendamos pra workshop e pra produção.
+
+# COMMAND ----------
+
+# MAGIC %md
 # MAGIC ## 5. Persiste os chunks **recursive** (default escolhido)
 # MAGIC
 # MAGIC Direto da DataFrame Spark → Delta com CDF habilitado (alimenta o Vector Search Sync).
-# MAGIC
-# MAGIC > **Por que recursive?** No próximo lab vamos rodar o retrieval real (Vector Search) e comparar a qualidade das respostas — o teste objetivo fica lá, onde já temos índice servido.
 
 # COMMAND ----------
 
