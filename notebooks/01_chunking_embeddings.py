@@ -68,7 +68,7 @@ def explode_chunks(df, chunker_udf, strategy_name):
         .withColumn("strategy", F.lit(strategy_name))
     )
 
-fixed_df = explode_chunks(source_df, fixed_chunk_udf, "fixed").cache()
+fixed_df = explode_chunks(source_df, fixed_chunk_udf, "fixed")
 print(f"Fixed: {fixed_df.count()} chunks")
 display(fixed_df.select("article_id", "chunk_idx", "chunk", "chunk_len").limit(5))
 
@@ -92,7 +92,7 @@ def recursive_chunk_udf(text: str):
     )
     return splitter.split_text(text)
 
-recursive_df = explode_chunks(source_df, recursive_chunk_udf, "recursive").cache()
+recursive_df = explode_chunks(source_df, recursive_chunk_udf, "recursive")
 print(f"Recursive: {recursive_df.count()} chunks")
 display(recursive_df.select("article_id", "chunk_idx", "chunk", "chunk_len").limit(5))
 
@@ -146,7 +146,7 @@ semantic_rows = [
 semantic_df = spark.createDataFrame(
     semantic_rows,
     schema="article_id string, category string, title string, chunk_idx int, chunk string, chunk_len int, strategy string",
-).cache()
+)
 print(f"Semantic: {semantic_df.count()} chunks")
 display(semantic_df.select("article_id", "chunk_idx", "chunk", "chunk_len").limit(5))
 
